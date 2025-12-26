@@ -3,48 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Notes (JSON)</title>
+    <title>My Digital Notebook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        /* General Styles */
-        body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f7f6; color: #333; }
-        h1 { text-align: center; color: #2c3e50; }
-        
-        /* Input Card */
-        .input-group { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 12px; }
-        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; width: 100%; box-sizing: border-box; }
-        textarea { resize: vertical; min-height: 80px; }
-        
-        /* Buttons */
-        button { padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s; }
-        button:hover { background-color: #218838; }
-        
-        /* Notes List Area */
-        #notes-list { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* Individual Note Card */
-        .note-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #007bff; position: relative; }
-        .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .note-title { margin: 0; font-size: 1.2em; color: #333; }
-        .category-badge { background: #e9ecef; color: #555; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: 600; }
-        .note-content { color: #666; white-space: pre-wrap; line-height: 1.5; }
-        
-        .delete-btn { background-color: #dc3545; padding: 6px 12px; font-size: 14px; width: auto; margin-top: 10px; }
-        .delete-btn:hover { background-color: #c82333; }
+        :root {
+            --bg-color: #e8e8e8;
+            --paper-color: #fffdf0;
+            --line-color: #949494;
+            --accent-color: #ff6b6b;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 3rem;
+            color: #2d3436;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        /* --- THE INPUT AREA (Top Notebook) --- */
+        .input-group {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid #dcdcdc;
+        }
+
+        input, textarea, select {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #74b9ff;
+            background: #fdfdfd;
+        }
+
+        button {
+            background: #0984e3;
+            color: white;
+            font-weight: bold;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.1s ease, background 0.2s;
+        }
+
+        button:hover {
+            background: #0076d1;
+            transform: translateY(-2px);
+        }
+
+        /* --- THE NOTES GRID (Paper Aesthetic) --- */
+        #notes-list {
+            margin-top: 50px;
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .note-card {
+            background-color: var(--paper-color);
+            /* CSS Trick for Lined Paper */
+            background-image: linear-gradient(#e1e1e1 1px, transparent 1px);
+            background-size: 100% 28px; /* Height of lines */
+            
+            padding: 0 20px 20px 20px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            line-height: 28px; /* Matches background size */
+            font-family: 'Patrick Hand', cursive; /* Handwriting font */
+            font-size: 1.1rem;
+            color: #555;
+            transition: transform 0.2s;
+        }
+
+        .note-card:hover {
+            transform: translateY(-5px) rotate(1deg);
+            z-index: 10;
+        }
+
+        /* The Red Margin Line */
+        .note-card::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--accent-color);
+            opacity: 0.6;
+        }
+
+        /* Tape effect at top */
+        .note-card::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 30px;
+            background-color: rgba(255,255,255,0.6);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .note-header {
+            /* Pushes title to sit on the first line properly */
+            padding-top: 32px; 
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .note-title {
+            margin: 0;
+            font-weight: bold;
+            color: #000;
+            font-size: 1.3rem;
+            line-height: 28px;
+        }
+
+        .note-content {
+            margin-top: 0;
+            white-space: pre-wrap; /* Keeps user paragraphs */
+        }
+
+        .delete-btn {
+            background: transparent;
+            color: #d63031;
+            border: 2px solid #d63031;
+            padding: 5px 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .delete-btn:hover {
+            background: #d63031;
+            color: white;
+            transform: none;
+        }
     </style>
 </head>
 <body>
 
-    <h1>📝 Student Notes</h1>
+    <h1>📓 My Class Notebook</h1>
     
     <div class="input-group">
-        <input type="text" id="title" placeholder="Note Title (e.g., Math Homework)">
-        <textarea id="content" placeholder="Details..."></textarea>
+        <input type="text" id="title" placeholder="Topic / Subject">
         <select id="category">
-            <option value="School">School</option>
+            <option value="Homework">Homework</option>
+            <option value="Project">Project</option>
+            <option value="Exam">Exam Review</option>
             <option value="Personal">Personal</option>
-            <option value="Important">Important</option>
         </select>
-        <button onclick="addNote()">Save Note</button>
+        <textarea id="content" placeholder="Write your notes here..."></textarea>
+        <button onclick="addNote()">📌 Pin Note to Board</button>
     </div>
 
     <div id="notes-list"></div>
@@ -52,80 +199,56 @@
     <script>
         const API_URL = '/api/notes';
 
-        // 1. Load notes from server
         async function loadNotes() {
             try {
                 const res = await fetch(API_URL);
                 const notes = await res.json();
-                
                 const list = document.getElementById('notes-list');
                 
-                // Clear the list first so we don't duplicate
-                list.innerHTML = ''; 
-
                 if (notes.length === 0) {
-                    list.innerHTML = '<p style="text-align:center; color:#888;">No notes yet. Add one above!</p>';
+                    list.innerHTML = `<p style="text-align:center; width:100%; grid-column: 1 / -1; color:#777;">
+                        No notes yet. Start writing above! ✍️
+                    </p>`;
                     return;
                 }
 
-                // Create HTML for each note
                 list.innerHTML = notes.map(note => `
                     <div class="note-card">
                         <div class="note-header">
-                            <h3 class="note-title">${note.title}</h3>
-                            <span class="category-badge">${note.category}</span>
+                            <span class="note-title">${note.title}</span>
                         </div>
                         <p class="note-content">${note.content}</p>
-                        <button class="delete-btn" onclick="deleteNote('${note.id}')">Delete</button>
+                        <button class="delete-btn" onclick="deleteNote('${note.id}')">Tear Page</button>
                     </div>
                 `).join('');
-            } catch (error) {
-                console.error("Error loading notes:", error);
-            }
+            } catch (error) { console.error(error); }
         }
 
-        // 2. Add a new note
         async function addNote() {
-            const titleInput = document.getElementById('title');
-            const contentInput = document.getElementById('content');
-            const categoryInput = document.getElementById('category');
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
 
-            const title = titleInput.value.trim();
-            const content = contentInput.value.trim();
-            const category = categoryInput.value;
+            if (!title || !content) return alert("Don't leave the page blank!");
 
-            if (!title || !content) {
-                alert("Please fill in both the Title and Details.");
-                return;
-            }
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content, category })
+            });
 
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, content, category })
-                });
-
-                // Clear the boxes
-                titleInput.value = '';
-                contentInput.value = '';
-                
-                // Refresh the list immediately
-                loadNotes(); 
-            } catch (error) {
-                alert("Failed to save note. Is the server running?");
-            }
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            loadNotes();
         }
 
-        // 3. Delete a note
         async function deleteNote(id) {
-            if (confirm('Delete this note?')) {
+            if (confirm('Tear this page out?')) {
                 await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                loadNotes(); // Refresh list after delete
+                loadNotes();
             }
         }
 
-        // Load notes when the page opens
         loadNotes();
     </script>
 </body>
