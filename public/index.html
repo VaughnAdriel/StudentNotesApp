@@ -1,22 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Notes & Reminders</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Notes (JSON)</title>
     <style>
-        body { font-family: sans-serif; max-width: 500px; margin: 40px auto; background: #f4f7f6; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea, select { width: 100%; margin: 10px 0; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        .note { border-left: 5px solid #007bff; position: relative; }
-        .category-badge { font-size: 12px; background: #e0e0e0; padding: 4px 8px; border-radius: 12px; }
-        .delete-btn { background: #dc3545; width: auto; margin-top: 10px; padding: 5px 10px; font-size: 12px; }
+        /* General Styles */
+        body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f7f6; color: #333; }
+        h1 { text-align: center; color: #2c3e50; }
+        
+        /* Input Card */
+        .input-group { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 12px; }
+        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; width: 100%; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        /* Buttons */
+        button { padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s; }
+        button:hover { background-color: #218838; }
+        
+        /* Notes List Area */
+        #notes-list { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Individual Note Card */
+        .note-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #007bff; position: relative; }
+        .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .note-title { margin: 0; font-size: 1.2em; color: #333; }
+        .category-badge { background: #e9ecef; color: #555; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: 600; }
+        .note-content { color: #666; white-space: pre-wrap; line-height: 1.5; }
+        
+        .delete-btn { background-color: #dc3545; padding: 6px 12px; font-size: 14px; width: auto; margin-top: 10px; }
+        .delete-btn:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
+
     <h1>📝 Student Notes</h1>
     
-    <div class="card">
-        <input type="text" id="title" placeholder="Note Title">
+    <div class="input-group">
+        <input type="text" id="title" placeholder="Note Title (e.g., Math Homework)">
         <textarea id="content" placeholder="Details..."></textarea>
         <select id="category">
             <option value="School">School</option>
@@ -29,41 +50,82 @@
     <div id="notes-list"></div>
 
     <script>
+        const API_URL = '/api/notes';
+
+        // 1. Load notes from server
         async function loadNotes() {
-            const res = await fetch('/api/notes');
-            const notes = await res.json();
-            document.getElementById('notes-list').innerHTML = notes.map(n => `
-                <div class="card note">
-                    <span class="category-badge">${n.category}</span>
-                    <h3>${n.title}</h3>
-                    <p>${n.content}</p>
-                    <button class="delete-btn" onclick="deleteNote('${n._id}')">Delete</button>
-                </div>
-            `).join('');
-        }
+            try {
+                const res = await fetch(API_URL);
+                const notes = await res.json();
+                
+                const list = document.getElementById('notes-list');
+                
+                // Clear the list first so we don't duplicate
+                list.innerHTML = ''; 
 
-        async function addNote() {
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
-            const category = document.getElementById('category').value;
-            
-            await fetch('/api/notes', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ title, content, category })
-            });
-            
-            document.getElementById('title').value = '';
-            document.getElementById('content').value = '';
-            loadNotes();
-        }
+                if (notes.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#888;">No notes yet. Add one above!</p>';
+                    return;
+                }
 
-        async function deleteNote(id) {
-            if(confirm("Delete this note?")) {
-                await fetch(`/api/notes/${id}`, { method: 'DELETE' });
-                loadNotes();
+                // Create HTML for each note
+                list.innerHTML = notes.map(note => `
+                    <div class="note-card">
+                        <div class="note-header">
+                            <h3 class="note-title">${note.title}</h3>
+                            <span class="category-badge">${note.category}</span>
+                        </div>
+                        <p class="note-content">${note.content}</p>
+                        <button class="delete-btn" onclick="deleteNote('${note.id}')">Delete</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error("Error loading notes:", error);
             }
         }
+
+        // 2. Add a new note
+        async function addNote() {
+            const titleInput = document.getElementById('title');
+            const contentInput = document.getElementById('content');
+            const categoryInput = document.getElementById('category');
+
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            const category = categoryInput.value;
+
+            if (!title || !content) {
+                alert("Please fill in both the Title and Details.");
+                return;
+            }
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content, category })
+                });
+
+                // Clear the boxes
+                titleInput.value = '';
+                contentInput.value = '';
+                
+                // Refresh the list immediately
+                loadNotes(); 
+            } catch (error) {
+                alert("Failed to save note. Is the server running?");
+            }
+        }
+
+        // 3. Delete a note
+        async function deleteNote(id) {
+            if (confirm('Delete this note?')) {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadNotes(); // Refresh list after delete
+            }
+        }
+
+        // Load notes when the page opens
         loadNotes();
     </script>
 </body>

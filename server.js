@@ -3,60 +3,70 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
-// The file where notes will be saved
+// This ensures we find the file correctly
 const DATA_FILE = path.join(__dirname, 'notes.json');
 
-// Helper: Read notes from file
+// --- THE FIX: SAFETY FIRST ---
 const readNotes = () => {
-    if (!fs.existsSync(DATA_FILE)) {
-        return []; // If file doesn't exist, return empty list
+    try {
+        // 1. If file is missing, create it
+        if (!fs.existsSync(DATA_FILE)) {
+            console.log("⚠️ File missing. Creating new notes.json...");
+            fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+            return [];
+        }
+
+        // 2. Read the file
+        const fileData = fs.readFileSync(DATA_FILE, 'utf8');
+
+        // 3. If file is empty, return empty list
+        if (!fileData || fileData.trim() === '') {
+            return [];
+        }
+
+        // 4. Parse the JSON
+        return JSON.parse(fileData);
+    } catch (err) {
+        // 5. If file is broken, RESET it
+        console.error("❌ Error reading file. Resetting to empty list.");
+        fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+        return [];
     }
-    const data = fs.readFileSync(DATA_FILE);
-    return JSON.parse(data);
 };
 
-// Helper: Write notes to file
 const writeNotes = (notes) => {
     fs.writeFileSync(DATA_FILE, JSON.stringify(notes, null, 2));
 };
 
-// --- API ROUTES ---
-
-// 1. Get all notes
+// API ROUTES
 app.get('/api/notes', (req, res) => {
     const notes = readNotes();
     res.json(notes);
 });
 
-// 2. Add a note
 app.post('/api/notes', (req, res) => {
     const notes = readNotes();
     const newNote = {
-        id: Date.now().toString(), // Generate a unique ID based on time
-        title: req.body.title,
-        content: req.body.content,
-        category: req.body.category,
-        date: new Date()
+        id: Date.now().toString(),
+        title: req.body.title || "No Title",
+        content: req.body.content || "No Details",
+        category: req.body.category || "General"
     };
-    
     notes.push(newNote);
     writeNotes(notes);
+    console.log("✅ Saved Note:", newNote.title);
     res.json(newNote);
 });
 
-// 3. Delete a note
 app.delete('/api/notes/:id', (req, res) => {
-    let notes = readNotes();
-    // Filter out the note with the matching ID
-    notes = notes.filter(note => note.id !== req.params.id);
-    writeNotes(notes);
-    res.json({ message: "Deleted successfully" });
+    const notes = readNotes();
+    const filteredNotes = notes.filter(n => n.id !== req.params.id);
+    writeNotes(filteredNotes);
+    res.json({ success: true });
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 JSON App running at http://localhost:${PORT}`));
+// START SERVER
+app.listen(3000, () => console.log("🚀 Server is running! Go to http://localhost:3000"));
